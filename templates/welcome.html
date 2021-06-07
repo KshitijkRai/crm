@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Roboto', sans-serif
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body><a href="/logout">Logout</a> <a href="/edit">Edit profile</a>
+<hr>
+<p><strong>PROFILE</strong></p> <img src="/public/pics/{{.ProfilePic}}" height="100px" width="100px"
+                                     alt="{{.ProfilePic}}">
+<hr>
+<p><strong>USER DETAILS</strong></p>
+<p>User ID: {{.ID}}</p>
+<p>Firstname: {{.Firstname}}</p>
+<p>Lastname: {{.Lastname}}</p>
+<p>Email: {{.Email}}</p>
+<p>Password: {{.Password}}</p>
+<p>Active: {{.Active}}</p>
+<p>Joined Date: {{.JoinedDate}}</p>
+<p>Last Active: {{.LastActive}}</p>
+<hr>
+</body>
+
+</html>

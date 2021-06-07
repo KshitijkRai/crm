@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Upload</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Roboto', sans-serif
+        }
+    </style>
+</head>
+
+<body>
+<p>Your Pictures:</p> {{range .}} <img src="/public/pics/{{.}}" height="300px" width="400px"> {{end}}
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="myFile">
+    <input type="submit" value="Upload"></form>
+</body>
+
+</html>

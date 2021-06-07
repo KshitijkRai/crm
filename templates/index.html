@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Index</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Roboto', sans-serif
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body> {{template "login"}}
+<hr>
+{{template "signup"}}
+<hr>
+{{if .}} {{template "sessions" .}} {{end}}
+</body>
+
+</html>

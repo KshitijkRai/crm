@@ -1,0 +1,15 @@
+{{define "sessions"}}
+<p>Active sessions</p>
+<table style="width:100%">
+    <tr>
+        <th>Key</th>
+        <th>Value</th>
+    </tr>
+    {{range $key, $val := .}}
+    <tr>
+        <td>{{$key}}</td>
+        <td>{{$val}}</td>
+    </tr>
+    {{end}}
+</table>
+{{end}}
