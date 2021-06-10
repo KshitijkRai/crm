@@ -3,8 +3,10 @@ package main
 import (
 	"crypto/sha1"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -37,6 +39,11 @@ type user struct {
 	LastActive time.Time
 }
 
+type loginInfo struct {
+	Email    string
+	Password string
+}
+
 func allUser() ([]user, error) {
 	// The make built-in function allocates and initializes an object of type slice, map, or chan (only).
 	// func(t Type, size ...IntegerType) Type
@@ -64,7 +71,7 @@ func allUser() ([]user, error) {
 
 func init() {
 	// Must is a helper that wraps a call to a function returning (*Template, error) and panics if the error is non-nil.
-	// emplate.Must(t *template.Template, err error) *template.Template
+	// template.Must(t *template.Template, err error) *template.Template
 
 	// ParseGlob creates a new Template and parses the template definitions from the files identified by the pattern.
 	// func template.ParseGlob(pattern string) (*template.Template, error)
@@ -102,6 +109,8 @@ func main() {
 	http.HandleFunc("/signup", signup)
 	http.HandleFunc("/welcome", welcome)
 	http.HandleFunc("/upload", upload)
+	http.HandleFunc("/checkEmail", checkEmail)
+	http.HandleFunc("/validateLogin", validateLogin)
 
 	// Handle registers the handler for the given pattern in the DefaultServeMux. The documentation for ServeMux explains how patterns are matched.
 	// func http.Handle(pattern string, handler http.Handler)
@@ -127,7 +136,8 @@ func index(w http.ResponseWriter, r *http.Request) {
 	// func (*template.Template).ExecuteTemplate(wr io.Writer, name string, data interface{}) error
 	err := tpl.ExecuteTemplate(w, "index.html", dbSessions)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -154,14 +164,16 @@ func login(w http.ResponseWriter, r *http.Request) {
 		// func (*sql.Row).Scan(dest ...interface{}) error
 		err := row.Scan(&user.ID, &user.Firstname, &user.Lastname, &user.Email, &user.Password, &user.ProfilePic, &user.Active, &user.JoinedDate, &user.LastActive)
 		if err == sql.ErrNoRows {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		// CompareHashAndPassword compares a bcrypt hashed password with its possible plaintext equivalent. Returns nil on success, or an error on failure.
 		// func bcrypt.CompareHashAndPassword(hashedPassword []byte, password []byte) error
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		// NewV4 returns random generated UUID.
@@ -187,7 +199,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 	err := tpl.ExecuteTemplate(w, "login.html", nil)
 	if err != nil {
 		// The panic built-in function stops normal execution of the current goroutine
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -199,7 +212,8 @@ func logout(w http.ResponseWriter, r *http.Request) {
 
 	c, err := r.Cookie("SID")
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// The delete built-in function deletes the element with the specified key (m[key]) from the map. If m is nil or there is no such element, delete is a no-op.
@@ -223,8 +237,8 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodPost {
-		Firstname := r.FormValue("Firstname")
-		Lastname := r.FormValue("Lastname")
+		firstname := r.FormValue("firstname")
+		lastname := r.FormValue("lastname")
 		email := r.FormValue("email")
 		password := r.FormValue("password")
 
@@ -234,7 +248,8 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		// func bcrypt.GenerateFromPassword(password []byte, cost int) ([]byte, error)
 		encryptedPassword, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		var user user
@@ -244,17 +259,20 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		if err != sql.ErrNoRows {
 			// Fprintf formats according to a format specifier and writes to w. It returns the number of bytes written and any write error encountered.
 			// func fmt.Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error)
-			fmt.Fprintf(w, "%v already exists", user.Firstname)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		// Exec executes a query without returning any rows. The args are for any placeholder parameters in the query.
 		// func (*sql.DB).Exec(query string, args ...interface{}) (sql.Result, error)
-		_, err = db.Exec("INSERT INTO cms_user (Firstname, Lastname, email, password, profile_pic, Active, "+
+		_, err = db.Exec("INSERT INTO cms_user (firstname, lastname, email, password, profile_pic, Active, "+
 			"joined_date, last_Active) VALUES ($1, "+
 			"$2, $3, $4, $5, $6, $7, $8);",
-			Firstname, Lastname, email, encryptedPassword, "3ce03cb82293dd0b17029bb64692f134a3f406db.png", true, time.Now(), time.Now())
+			firstname, lastname, email, encryptedPassword, "3ce03cb82293dd0b17029bb64692f134a3f406db.png", true,
+			time.Now(), time.Now())
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		SID := uuid.NewV4()
@@ -272,9 +290,10 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/welcome", http.StatusSeeOther)
 		return
 	}
-	err := tpl.ExecuteTemplate(w, "signup.html", "Click to go back to homepage")
+	err := tpl.ExecuteTemplate(w, "signup.html", nil)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -292,28 +311,23 @@ func welcome(w http.ResponseWriter, r *http.Request) {
 	row := db.QueryRow("SELECT * FROM cms_user WHERE email = $1;", dbSessions[c.Value])
 	err = row.Scan(&user.ID, &user.Firstname, &user.Lastname, &user.Email, &user.Password, &user.ProfilePic, &user.Active, &user.JoinedDate, &user.LastActive)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	err = tpl.ExecuteTemplate(w, "welcome.html", user)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-}
-
-func isLoggedIn(r *http.Request) bool {
-	c, err := r.Cookie("SID")
-	if err != nil {
-		return false
-	}
-
-	if _, ok := dbSessions[c.Value]; ok {
-		return true
-	}
-	return false
 }
 
 func upload(w http.ResponseWriter, r *http.Request) {
+	if !isLoggedIn(r) {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
 	c, err := r.Cookie("SID")
 	if err != nil {
 		SID := uuid.NewV4()
@@ -330,7 +344,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		// func (*http.Request).FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 		myFile, myFileHeader, err := r.FormFile("myFile")
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		defer myFile.Close()
 
@@ -354,7 +369,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		// func os.Getwd() (dir string, err error)
 		workingDirectory, err := os.Getwd()
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		// Join joins any number of path elements into a single path, separating them with an OS specific Separator.
@@ -365,7 +381,8 @@ func upload(w http.ResponseWriter, r *http.Request) {
 		// func os.Create(name string) (*os.File, error)
 		myNewFile, err := os.Create(path)
 		if err != nil {
-			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		// func os.Create(name string) (*os.File, error)
@@ -390,6 +407,72 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	splitStrings := strings.Split(c.Value, "|")
 	err = tpl.ExecuteTemplate(w, "upload.html", splitStrings[1:])
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+}
+
+func checkEmail(w http.ResponseWriter, r *http.Request) {
+	// ReadAll reads from r until an error or EOF and returns the data it read.
+	// func ReadAll(r io.Reader) ([]byte, error)
+	bs, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(bs) == 0 {
+		fmt.Fprint(w, false)
+		return
+	}
+
+	row := db.QueryRow("SELECT * FROM cms_user WHERE email = $1;", string(bs))
+	var user user
+	err = row.Scan(&user.ID, &user.Firstname, &user.Lastname, &user.Email, &user.Password, &user.ProfilePic, &user.Active, &user.JoinedDate, &user.LastActive)
+	if err == sql.ErrNoRows {
+		fmt.Fprint(w, true)
+		return
+	}
+	fmt.Fprint(w, false)
+}
+
+type Message struct{ email, password string }
+
+func validateLogin(w http.ResponseWriter, r *http.Request) {
+	// Parse data from ajax to struct
+	var loginInfo loginInfo
+	err := json.NewDecoder(r.Body).Decode(&loginInfo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Query user
+	row := db.QueryRow("SELECT * FROM cms_user WHERE email = $1;", loginInfo.Email)
+	// Save row to loginInfo
+	var user user
+	err = row.Scan(&user.ID, &user.Firstname, &user.Lastname, &user.Email, &user.Password, &user.ProfilePic, &user.Active, &user.JoinedDate, &user.LastActive)
+	if err == sql.ErrNoRows {
+		fmt.Fprint(w, "email error")
+		return
+	}
+	// Compare entered password with stored password
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginInfo.Password))
+	if err != nil {
+		fmt.Fprint(w, "password error")
+		return
+	}
+	// Return response to ajax
+	fmt.Fprint(w, "")
+}
+
+func isLoggedIn(r *http.Request) bool {
+	c, err := r.Cookie("SID")
+	if err != nil {
+		return false
+	}
+
+	if _, ok := dbSessions[c.Value]; ok {
+		return true
+	}
+	return false
 }

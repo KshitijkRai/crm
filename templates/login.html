@@ -1,11 +1,105 @@
-{{define "login"}}
-<p>Login to your account</p>
-<form action="/login" method="post">
-    <label>Email:</label>
-    <input autocomplete="on" maxlength="15" minlength="1" name="email" placeholder="example@example.com" required
-           type="email">
-    <label>Password:</label>
-    <input autocomplete="on" maxlength="10" minlength="1" name="password" placeholder="Password" required
-           type="password">
-    <input type="submit" value="Submit"></form>
-{{end}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="/public/css/styles.css">
+</head>
+
+<body>
+<div class="container">
+    <h3>Login</h3>
+    <hr>
+    <form action="/login" method="post" id="login-form">
+        <label for="login-email">Email
+            <input id="login-email" autofocus name="email" placeholder="example@example.com" type="email" required>
+        </label>
+        <p id="login-email-err" class="err" hidden></p>
+        <label for="login-password">Password
+            <input id="login-password" name="password" placeholder="Password" type="password" required>
+        </label>
+        <p id="login-password-err" class="err" hidden></p>
+        <input id="login-btn" type="submit" value="LOGIN">
+    </form>
+</div>
+<script>
+    let loginForm = document.querySelector("#login-form");
+    let loginEmail = document.querySelector("#login-email");
+    let loginEmailErr = document.querySelector("#login-email-err");
+    let loginPassword = document.querySelector("#login-password");
+    let loginPasswordErr = document.querySelector("#login-password-err");
+
+    loginEmail.addEventListener("input", () => {
+        if (loginEmail.value === "") {
+            loginEmailErr.textContent = "";
+            loginEmailErr.style.display = "none";
+        }
+    });
+
+    loginPassword.addEventListener("input", () => {
+        if (loginPassword.value === "") {
+            loginEmailErr.textContent = "";
+            loginPasswordErr.style.display = "none";
+        }
+    });
+
+    function validateLoginDetails(e) {
+        let emailOk = false;
+        let passwordOk = false;
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", "/validateLogin", true)
+        // Send the proper header information along with the request
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.onreadystatechange = function () { // Call a function when the state changes.
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                // Request finished. Do processing here.
+                let item = xhr.responseText;
+                if (item === "email error") {
+                    loginEmailErr.textContent = "The email address you entered is not registered.";
+                    loginEmailErr.style.display = "block";
+                    emailOk = false;
+                } else {
+                    loginEmailErr.textContent = "";
+                    loginEmailErr.style.display = "none";
+                    emailOk = true;
+                }
+
+                if (item === "password error") {
+                    loginPasswordErr.textContent = "The password you entered did not match.";
+                    loginPasswordErr.style.display = "block";
+                    passwordOk = false;
+                } else {
+                    loginPasswordErr.textContent = "";
+                    loginPasswordErr.style.display = "none";
+                    passwordOk = true;
+                }
+
+                if (emailOk && passwordOk) {
+                    loginEmailErr.textContent = "";
+                    loginEmailErr.style.display = "none";
+                    loginPasswordErr.textContent = "";
+                    loginPasswordErr.style.display = "none";
+                    emailOk = true;
+                    passwordOk = true;
+                }
+            }
+            console.log("I: ", emailOk, passwordOk);
+        };
+        xhr.send(JSON.stringify({
+            email: loginEmail.value,
+            password: loginPassword.value
+        }));
+        xhr.load = function () {
+            console.log("O: ", emailOk, passwordOk);
+            if (!emailOk || !passwordOk ) {
+                e.preventDefault();
+            }
+        }
+    }
+
+    loginForm.addEventListener("submit", validateLoginDetails);
+</script>
+</body>
+
+</html>

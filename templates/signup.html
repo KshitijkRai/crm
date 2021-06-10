@@ -1,23 +1,122 @@
-{{define "signup"}}
-<p>Register a new account</p>
-<form action="/signup" method="post">
-    <div>
-        <label>Firstname:</label>
-        <input autocomplete="on" autofocus maxlength="25" name="firstname" placeholder="Firstname" required type="text">
-    </div>
-    <div>
-        <label>Lastname:</label>
-        <input autocomplete="on" maxlength="25" name="lastname" placeholder="Lastname" required type="text"></div>
-    <div>
-        <label>Email:</label>
-        <input autocomplete="on" maxlength="25" name="email" placeholder="example@example.com" required type="email">
-    </div>
-    <div>
-        <label>Password:</label>
-        <input autocomplete="on" maxlength="10" minlength="5" name="password" placeholder="Password" required
-               type="password"></div>
-    <div>
-        <label></label>
-        <input type="submit" value="Submit"></div>
-</form>
-{{end}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/styles.css">
+</head>
+
+<body>
+<div class="container">
+    <h3>Sign Up</h3>
+    <hr>
+    <form action="/signup" method="post" id="signup-form">
+        <label for="firstname">First Name
+            <input id="firstname" autofocus name="firstname" placeholder="First name" type="text" required>
+        </label>
+        <label for="lastname">Last Name
+            <input id="lastname" name="lastname" placeholder="Last name" type="text" required>
+        </label>
+        <label for="signup-email">Email
+            <input id="signup-email" name="email" placeholder="example@example.com" type="email" required>
+        </label>
+        <p id="signup-email-err" class="err" hidden></p>
+        <label for="signup-password">Password
+            <input id="signup-password" name="password" placeholder="Enter password" type="password" required>
+        </label>
+        <label for="confirm-signup-password">Confirm Password
+            <input id="confirm-signup-password" name="password" placeholder="Confirm password" type="password" required>
+        </label>
+        <p id="signup-password-err" class="err" hidden></p>
+        <input id="signup-btn" type="submit" value="SIGN UP">
+    </form>
+</div>
+<script>
+    console.log("Javascript running");
+
+    // Signup form elements
+    let firstname = document.querySelector("#firstname");
+    let lastname = document.querySelector("#lastname");
+
+    let signupForm = document.querySelector("#signup-form");
+    let signupEmail = document.querySelector("#signup-email");
+    let signupEmailErr = document.querySelector("#signup-email-err");
+    let signupPassword = document.querySelector("#signup-password");
+    let confirmSignupPassword = document.querySelector("#confirm-signup-password");
+    let signupPasswordErr = document.querySelector("#signup-password-err");
+
+
+    // Appends an event listener for events whose type attribute value is type.
+    // The callback argument sets the callback that will be invoked when the event is dispatched.
+    signupEmail.addEventListener("input", function () {
+        // The XMLHttpRequest() constructor creates a new XMLHttpRequest.
+        let xhr = new XMLHttpRequest();
+        // The XMLHttpRequest method open() initializes a newly-created request, or re-initializes an existing one.
+        xhr.open("POST", "/checkEmail", true)
+        // The readystatechange event is fired when the readyState attribute of a document has changed.
+        xhr.addEventListener("readystatechange", function () {
+            // The XMLHttpRequest.readyState property returns the state an XMLHttpRequest client is in.
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                // The read-only XMLHttpRequest property responseText returns the text received from a server following a request being sent.
+                let item = xhr.responseText;
+                console.log("New user: ", item);
+                // If true, user already exists, else new user.
+                if (item !== "true") {
+                    // The textContent property of the Node interface represents the text content of the node and its descendants.
+                    signupEmailErr.textContent = "The email address you entered is already connected to an account.";
+                    signupEmailErr.style.display = "block";
+                } else {
+                    // Remove error message
+                    signupEmailErr.textContent = "";
+                    signupEmailErr.style.display = "none";
+                }
+            }
+        });
+        xhr.send(signupEmail.value)
+    });
+
+    signupPassword.addEventListener("input", function () {
+        // If password is null clear confirm password.
+        if (signupPassword.value === "") {
+            confirmSignupPassword.value = "";
+            signupPasswordErr.textContent = "";
+        }
+        // Hide password err message.
+        signupPasswordErr.style.display = "none";
+    }, false);
+
+    function validateSignupPasswords() {
+        // The textContent property of the Node interface represents the text content of the node and its descendants.
+        signupPasswordErr.textContent = "";
+        // If entered password is blank, show error message.
+        if (signupPassword.value === "") {
+            signupPasswordErr.textContent = "Please enter password";
+            signupPasswordErr.style.display = "block";
+            return false;
+        }
+        // If password and confirmed password didn't match, show error message.
+        if (signupPassword.value !== confirmSignupPassword.value) {
+            signupPasswordErr.textContent = "The password you entered didn't match"
+            signupPasswordErr.style.display = "block";
+            return false;
+        }
+        signupPasswordErr.style.display = "none";
+        return true;
+    }
+
+    // Check for passwords validation on submit.
+    signupForm.addEventListener("submit", function (e) {
+        let ok = validateSignupPasswords();
+        if (!ok) {
+            // The Event interface's preventDefault() method tells the user agent  that if the event does not get
+            // explicitly handled, its default action should not be taken as it normally would be.
+            e.preventDefault();
+        }
+    }, false);
+</script>
+</body>
+
+</html>

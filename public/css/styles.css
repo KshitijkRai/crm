@@ -1,0 +1,47 @@
+* {
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    background-color: #efefef;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+}
+
+label {
+    display: block;
+    margin-top: 20px;
+}
+
+input {
+    width: 100%;
+    display: block;
+    margin-top: 5px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    color: #fff;
+    background-color: #147ce5;
+    margin: 10px 0 10px 0;
+    border: none;
+    cursor: pointer;
+}
+
+.container {
+    background-color: #fafafa;
+    width: 400px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.err {
+    font-size: 12px;
+    color: red;
+}

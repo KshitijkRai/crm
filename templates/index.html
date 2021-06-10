@@ -6,23 +6,13 @@
     <title>Index</title>
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-    <style>
-        * {
-            font-family: 'Roboto', sans-serif
-        }
-
-        th,
-        td {
-            border: 1px solid black;
-        }
-    </style>
+    <link rel="stylesheet" href="/public/css/styles.css">
 </head>
 
-<body> {{template "login"}}
-<hr>
-{{template "signup"}}
-<hr>
-{{if .}} {{template "sessions" .}} {{end}}
+<body>
+<a href="/login">Login</a>
+<br>
+<a href="/signup">Create New Account</a>
 </body>
 
 </html>
