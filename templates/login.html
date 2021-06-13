@@ -29,28 +29,32 @@
     let loginEmailErr = document.querySelector("#login-email-err");
     let loginPassword = document.querySelector("#login-password");
     let loginPasswordErr = document.querySelector("#login-password-err");
+    let loginBtn = document.querySelector("#login-btn");
 
     loginEmail.addEventListener("input", () => {
-        if (loginEmail.value === "") {
-            loginEmailErr.textContent = "";
-            loginEmailErr.style.display = "none";
-        }
+        loginEmailErr.textContent = "";
+        loginEmailErr.style.display = "none";
     });
 
     loginPassword.addEventListener("input", () => {
-        if (loginPassword.value === "") {
-            loginEmailErr.textContent = "";
-            loginPasswordErr.style.display = "none";
-        }
+        loginEmailErr.textContent = "";
+        loginPasswordErr.style.display = "none";
     });
 
-    function validateLoginDetails(e) {
-        let emailOk = false;
-        let passwordOk = false;
+    loginForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        let emailOk;
+        let passwordOk;
         let xhr = new XMLHttpRequest();
-        xhr.open("POST", "/validateLogin", true)
-        // Send the proper header information along with the request
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        // Define what happens on successful data submission
+        xhr.addEventListener("load", function () {
+            console.log("Data sent and response loaded.");
+        });
+        xhr.addEventListener("error", function () {
+            alert("Something went wrong.");
+        });
+        // Set up our request
+        xhr.open("GET", "/login")
         xhr.onreadystatechange = function () { // Call a function when the state changes.
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 // Request finished. Do processing here.
@@ -64,7 +68,6 @@
                     loginEmailErr.style.display = "none";
                     emailOk = true;
                 }
-
                 if (item === "password error") {
                     loginPasswordErr.textContent = "The password you entered did not match.";
                     loginPasswordErr.style.display = "block";
@@ -74,7 +77,6 @@
                     loginPasswordErr.style.display = "none";
                     passwordOk = true;
                 }
-
                 if (emailOk && passwordOk) {
                     loginEmailErr.textContent = "";
                     loginEmailErr.style.display = "none";
@@ -84,21 +86,9 @@
                     passwordOk = true;
                 }
             }
-            console.log("I: ", emailOk, passwordOk);
         };
-        xhr.send(JSON.stringify({
-            email: loginEmail.value,
-            password: loginPassword.value
-        }));
-        xhr.load = function () {
-            console.log("O: ", emailOk, passwordOk);
-            if (!emailOk || !passwordOk ) {
-                e.preventDefault();
-            }
-        }
-    }
-
-    loginForm.addEventListener("submit", validateLoginDetails);
+        xhr.send();
+    }, false);
 </script>
 </body>
 

@@ -55,18 +55,22 @@
         // The XMLHttpRequest() constructor creates a new XMLHttpRequest.
         let xhr = new XMLHttpRequest();
         // The XMLHttpRequest method open() initializes a newly-created request, or re-initializes an existing one.
-        xhr.open("POST", "/checkEmail", true)
+        xhr.open("POST", "/validateSignup", true)
+        // Send the proper header information along with the request
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         // The readystatechange event is fired when the readyState attribute of a document has changed.
         xhr.addEventListener("readystatechange", function () {
             // The XMLHttpRequest.readyState property returns the state an XMLHttpRequest client is in.
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                // The read-only XMLHttpRequest property responseText returns the text received from a server following a request being sent.
+                // The read-only XMLHttpRequest property responseText returns the text
+                // received from a server following a request being sent.
                 let item = xhr.responseText;
                 console.log("New user: ", item);
                 // If true, user already exists, else new user.
                 if (item !== "true") {
-                    // The textContent property of the Node interface represents the text content of the node and its descendants.
-                    signupEmailErr.textContent = "The email address you entered is already connected to an account.";
+                    // The textContent property of the Node interface represents
+                    // the text content of the node and its descendants.
+                    signupEmailErr.textContent = "The email address you entered is already registered.";
                     signupEmailErr.style.display = "block";
                 } else {
                     // Remove error message
@@ -79,18 +83,12 @@
     });
 
     signupPassword.addEventListener("input", function () {
-        // If password is null clear confirm password.
-        if (signupPassword.value === "") {
-            confirmSignupPassword.value = "";
-            signupPasswordErr.textContent = "";
-        }
-        // Hide password err message.
+        // The textContent property of the Node interface represents the text content of the node and its descendants.
+        signupPasswordErr.textContent = "";
         signupPasswordErr.style.display = "none";
     }, false);
 
     function validateSignupPasswords() {
-        // The textContent property of the Node interface represents the text content of the node and its descendants.
-        signupPasswordErr.textContent = "";
         // If entered password is blank, show error message.
         if (signupPassword.value === "") {
             signupPasswordErr.textContent = "Please enter password";
@@ -103,6 +101,7 @@
             signupPasswordErr.style.display = "block";
             return false;
         }
+        signupPasswordErr.textContent = "";
         signupPasswordErr.style.display = "none";
         return true;
     }
