@@ -77,7 +77,7 @@ func init() {
 	// func template.ParseGlob(pattern string) (*template.Template, error)
 	tpl = template.Must(template.ParseGlob("templates/*.html"))
 	var err error
-	connStr := "postgres://postgres:password@localhost/postgres?sslmode=disable"
+	connStr := "postgres://postgres:root@localhost/postgres?sslmode=disable"
 	// Open opens a database specified by its database driver name and a driver-specific data source name,
 	// usually consisting of at least a database name and connection information.
 	// func sql.Open(driverName string, dataSourceName string) (*sql.DB, error)
